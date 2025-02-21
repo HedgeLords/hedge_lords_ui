@@ -60,14 +60,14 @@ export interface Ticker {
   oi_change_usd_6h: string;
 }
 
-interface OptionsTicker extends Ticker {
+export interface OptionsTicker extends Ticker {
   strike_price: string;
   greeks: Greeks | null;
   quotes: Quotes | null;
   contract_type: 'put_options' | 'call_options';
 }
 
-interface FuturesTicker extends Ticker {
+export interface FuturesTicker extends Ticker {
   mark_basis: string;
   funding_rate: string;
   quotes: Quotes | null;

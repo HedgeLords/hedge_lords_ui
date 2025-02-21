@@ -48,7 +48,6 @@ export class OptionsChainComponent implements AfterViewInit {
         })
       )
       .subscribe((contracts) => {
-        console.log(contracts);
         if (contracts.length > 0) {
           // Connect websocket with filtered contracts
           this.websocketService.connect(contracts);

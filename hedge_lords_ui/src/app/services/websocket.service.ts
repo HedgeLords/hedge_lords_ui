@@ -28,8 +28,7 @@ export class WebsocketService {
   constructor() {}
 
   public connect(contracts: string[]): void {
-    // Define the WebSocket URL. Adjust if needed.
-    this.unsubscribe();
+    // Define the WebSocket URL. Adjust if needed
     const wsUrl = 'wss://socket.india.delta.exchange';
 
     // Create the WebSocket connection.
@@ -44,7 +43,7 @@ export class WebsocketService {
         ],
       },
     };
-    this.socket$.next(JSON.stringify(subscribeMessage));
+    this.socket$.next(subscribeMessage);
 
     // Listen to incoming messages from the WebSocket.
     this.socket$.subscribe({
@@ -54,13 +53,12 @@ export class WebsocketService {
           msg.contract_type === 'call_options' ||
           msg.contract_type === 'put_options'
         ) {
-          const newOptions = this.options.value;
+          const newOptions = new Map(this.options.value);
           newOptions.set(msg.symbol, msg);
           this.options.next(newOptions);
-        } else if (msg.updateType === 'perpetual_futures') {
+        } else if (msg.contract_type === 'perpetual_futures') {
           this.future.next(msg);
         }
-        console.log(msg);
       },
       error: (err) => {
         console.error('WebSocket error:', err);

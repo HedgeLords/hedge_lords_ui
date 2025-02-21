@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Sort, MatSortModule, MatSort } from '@angular/material/sort';
-import { SimpleTicker } from '../../models/ticker.model';
+import { OptionsTicker, SimpleTicker } from '../../models/ticker.model';
 import { SettingsService } from '../../services/settings.service';
 import { RestClientService } from '../../services/rest-client.service';
 import { WebsocketService } from '../../services/websocket.service';
@@ -15,19 +15,9 @@ import { Subscription, combineLatest, switchMap, of } from 'rxjs';
   styleUrl: './options-chain.component.scss',
   providers: [SettingsService, RestClientService, WebsocketService],
 })
-export class OptionsChainComponent implements AfterViewInit {
-  @ViewChild(MatSort) sort!: MatSort;
-  dataSource = new MatTableDataSource<SimpleTicker>();
-
-  displayedColumns: string[] = [
-    'putBid',
-    'putAsk',
-    'strike',
-    'callBid',
-    'callAsk',
-  ];
-
+export class OptionsChainComponent {
   private subscriptions: Subscription[] = [];
+  public optionsData: Map<number, SimpleTicker[]> = new Map();
 
   constructor(
     private settingsService: SettingsService,
@@ -51,29 +41,47 @@ export class OptionsChainComponent implements AfterViewInit {
         if (contracts.length > 0) {
           // Connect websocket with filtered contracts
           this.websocketService.connect(contracts);
-
           // Subscribe to options updates
           const optionsSubscription = this.websocketService.options.subscribe(
             (optionsMap) => {
               if (optionsMap.size > 0) {
-                const simpleTickers = Array.from(optionsMap.values())
-                  .map((ticker) => new SimpleTicker(ticker))
-                  .sort((a, b) => a.strike_price - b.strike_price);
-
-                this.dataSource.data = simpleTickers;
+                this.groupOptionsByStrike(optionsMap);
               }
             }
           );
-
           this.subscriptions.push(optionsSubscription);
         }
       });
-
     this.subscriptions.push(subscription);
   }
 
-  ngAfterViewInit() {
-    this.dataSource.sort = this.sort;
+  private groupOptionsByStrike(optionsMap: Map<string, OptionsTicker>) {
+    // Create a new Map with sorted strikes
+    const sortedStrikes = Array.from(optionsMap.values())
+      .map((ticker) => parseInt(ticker.strike_price))
+      .filter((value, index, self) => self.indexOf(value) === index) // Get unique strikes
+      .sort((a, b) => a - b); // Sort in ascending order
+
+    const newOptionsData = new Map<number, SimpleTicker[]>();
+
+    // Initialize the map with sorted strikes
+    sortedStrikes.forEach((strike) => {
+      newOptionsData.set(strike, []);
+    });
+
+    // Populate the options
+    Array.from(optionsMap.values()).forEach((ticker) => {
+      const simpleTicker = new SimpleTicker(ticker);
+      const strike = simpleTicker.strike_price;
+      newOptionsData.get(strike)!.push(simpleTicker);
+    });
+
+    // Sort options within each strike price group (calls at 0, puts at 1)
+    newOptionsData.forEach((tickers, strike) => {
+      tickers.sort((a, b) => (a.contract_type === 'put_options' ? 1 : -1));
+    });
+
+    this.optionsData = newOptionsData;
   }
 
   ngOnDestroy() {

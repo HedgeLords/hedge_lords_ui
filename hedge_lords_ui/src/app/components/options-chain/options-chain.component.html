@@ -1,65 +1,35 @@
 <div class="options-chain">
-  <div class="overflow-x-auto">
-    <table mat-table [dataSource]="dataSource" matSort class="w-full">
-      <!-- Put Side Columns -->
-      <ng-container matColumnDef="putBid">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Bid</th>
-        <td mat-cell *matCellDef="let row">
-          <span [class.text-green-500]="row.contract_type === 'put_options'">
-            {{ row.contract_type === "put_options" ? row.best_bid : "" }}
-          </span>
-        </td>
-      </ng-container>
+  <table class="w-full text-sm">
+    <!-- Header -->
+    <thead>
+      <tr class="bg-gray-800">
+        <th class="text-green-500 p-2">Put Bid</th>
+        <th class="text-red-500 p-2">Put Ask</th>
+        <th class="font-bold p-2">Strike</th>
+        <th class="text-green-500 p-2">Call Bid</th>
+        <th class="text-red-500 p-2">Call Ask</th>
+      </tr>
+    </thead>
 
-      <ng-container matColumnDef="putAsk">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ask</th>
-        <td mat-cell *matCellDef="let row">
-          <span [class.text-red-500]="row.contract_type === 'put_options'">
-            {{ row.contract_type === "put_options" ? row.best_ask : "" }}
-          </span>
+    <!-- Body -->
+    <tbody>
+      @for(options of optionsData; track options) {
+      <tr class="border-b border-gray-700 hover:bg-gray-800">
+        <td class="text-green-500 p-2 text-center">
+          {{ options[1][1].best_bid || "-" }}
         </td>
-      </ng-container>
-
-      <!-- Strike Price Column -->
-      <ng-container matColumnDef="strike">
-        <th
-          mat-header-cell
-          *matHeaderCellDef
-          mat-sort-header
-          class="bg-gray-800"
-        >
-          Strike
-        </th>
-        <td
-          mat-cell
-          *matCellDef="let row"
-          class="bg-gray-800 text-center font-bold"
-        >
-          {{ row.strike_price }}
+        <td class="text-red-500 p-2 text-center">
+          {{ options[1][1].best_ask || "-" }}
         </td>
-      </ng-container>
-
-      <!-- Call Side Columns -->
-      <ng-container matColumnDef="callBid">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Bid</th>
-        <td mat-cell *matCellDef="let row">
-          <span [class.text-green-500]="row.contract_type === 'call_options'">
-            {{ row.contract_type === "call_options" ? row.best_bid : "" }}
-          </span>
+        <td class="font-bold p-2 text-center bg-gray-800">{{ options[0] }}</td>
+        <td class="text-green-500 p-2 text-center">
+          {{ options[1][0].best_bid || "-" }}
         </td>
-      </ng-container>
-
-      <ng-container matColumnDef="callAsk">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ask</th>
-        <td mat-cell *matCellDef="let row">
-          <span [class.text-red-500]="row.contract_type === 'call_options'">
-            {{ row.contract_type === "call_options" ? row.best_ask : "" }}
-          </span>
+        <td class="text-red-500 p-2 text-center">
+          {{ options[1][0].best_ask || "-" }}
         </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-    </table>
-  </div>
+      </tr>
+      }
+    </tbody>
+  </table>
 </div>

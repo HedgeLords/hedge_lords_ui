@@ -4,22 +4,19 @@ import { RestClientService } from '../../services/rest-client.service';
 import { Subscription } from 'rxjs';
 import { SettingsService } from '../../services/settings.service';
 import { HttpClient } from '@angular/common/http';
+import { OptionsChainComponent } from '../options-chain/options-chain.component';
 
 @Component({
   selector: 'app-trading',
-  imports: [MatGridListModule],
+  imports: [MatGridListModule, OptionsChainComponent],
   templateUrl: './trading.component.html',
   styleUrl: './trading.component.scss',
   providers: [SettingsService, RestClientService],
 })
-export class TradingComponent implements OnInit, OnDestroy {
+export class TradingComponent implements OnDestroy {
   private subscriptions: Subscription = new Subscription();
 
   constructor() {}
-
-  ngOnInit(): void {
-    throw new Error('Method not implemented.');
-  }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();

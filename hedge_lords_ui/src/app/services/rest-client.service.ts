@@ -1,12 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-
-interface ExchangeProductResponse {
-  success: boolean;
-  result: Array<{ symbol: string }>;
-}
 
 @Injectable({
   providedIn: 'root',
@@ -17,66 +12,58 @@ export class RestClientService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Calls the exchange API to fetch products, then filters the returned symbols.
-   *
-   * @param coin - The coin used for filtering (e.g. 'BTCUSD'). We check that the product symbol’s second part equals coin.substring(0, 3).
-   * @param expiryDate - The expected expiry date. The product symbol is expected to have its date as ddmmyy in the fourth part.
-   * @returns An Observable of string arrays (filtered symbols).
-   */
-  getOptionsContracts(coin: string, expiryDate: Date): Observable<string[]> {
-    // Prepare query parameters.
+  public parseDateString(dateStr: string): Date {
+    const day = parseInt(dateStr.substring(0, 2));
+    const month = parseInt(dateStr.substring(2, 4)) - 1; // Months are 0-based
+    const year = 2000 + parseInt(dateStr.substring(4, 6));
+    return new Date(year, month, day);
+  }
+
+  private isSameDate(date1: Date, date2: Date): boolean {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  }
+
+  public getOptionsContracts(): Observable<string[]> {
     const params = new HttpParams()
       .set('contract_types', 'call_options,put_options')
       .set('states', 'live');
 
-    const url = `${this.baseUrl}/v2/products`;
+    return this.http.get<any>(`${this.baseUrl}/v2/products`, { params }).pipe(
+      map((response) => {
+        if (response.success) {
+          return response.result.map((product: any) => product.symbol);
+        }
+        console.error(
+          'Error fetching options symbols:',
+          response.error || 'Unknown error'
+        );
+        return [];
+      }),
+      catchError((error) => {
+        console.error('Error fetching options symbols:', error);
+        return of([]);
+      })
+    );
+  }
 
-    return this.http
-      .get<ExchangeProductResponse>(url, { params })
-      .pipe(
-        map((response) => {
-          if (response.success) {
-            // Extract the symbol from each product.
-            return response.result.map((prod) => prod.symbol);
-          } else {
-            throw new Error('Exchange API returned unsuccessful response');
-          }
-        }),
-        // Filter the symbols based on the provided coin and expiryDate.
-        map((symbols) => {
-          return symbols.filter((prodSymbol) => {
-            const parts = prodSymbol.split('-');
-            // Check that symbol splits into 4 parts.
-            if (parts.length !== 4) {
-              return false;
-            }
-            // Check that the second part equals the first three letters of the coin.
-            if (parts[1] !== coin.substring(0, 3)) {
-              return false;
-            }
-            // The fourth part is expected to be the date in ddmmyy format.
-            const dateStr = parts[3];
-            if (dateStr.length !== 6) {
-              return false;
-            }
-            const day = parseInt(dateStr.substring(0, 2), 10);
-            const month = parseInt(dateStr.substring(2, 4), 10) - 1; // JavaScript months are 0-based.
-            const year = 2000 + parseInt(dateStr.substring(4, 6), 10);
-            const productDate = new Date(year, month, day);
+  public getFilteredOptions(symbol: string, date: Date): Observable<string[]> {
+    return this.getOptionsContracts().pipe(
+      map((contracts) => {
+        return contracts.filter((contract) => {
+          const parts = contract.split('-');
+          if (parts.length !== 4) return false;
 
-            // Compare the product date with the provided expiryDate.
-            return (
-              productDate.getDate() === expiryDate.getDate() &&
-              productDate.getMonth() === expiryDate.getMonth() &&
-              productDate.getFullYear() === expiryDate.getFullYear()
-            );
-          });
-        }),
-        catchError((err) => {
-          console.error('Error fetching options contracts', err);
-          return throwError(err);
-        })
-      );
+          if (parts[1] !== symbol.substring(0, 3)) return false;
+
+          // Convert date string to Date object
+          const contractDate = this.parseDateString(parts[3]); // ddmmyy format
+          return this.isSameDate(contractDate, date);
+        });
+      })
+    );
   }
 }

@@ -1,35 +1,60 @@
-<div class="options-chain">
-  <table class="w-full text-sm">
-    <!-- Header -->
+<div class="options-chain h-full">
+  <table class="w-full text-center overflow-y-auto" style="max-height: 150px">
     <thead>
-      <tr class="bg-gray-800">
-        <th class="text-green-500 p-2">Put Bid</th>
-        <th class="text-red-500 p-2">Put Ask</th>
-        <th class="font-bold p-2">Strike</th>
-        <th class="text-green-500 p-2">Call Bid</th>
-        <th class="text-red-500 p-2">Call Ask</th>
+      <tr class="border">
+        <th class="text-green-700 font-bold px-2 py-1">Call Bid</th>
+        <th class="text-red-500 font-bold px-2 py-1">Call Ask</th>
+        <th class="border font-bold px-2 py-1">Operations</th>
+        <th class="border font-bold px-2 py-1">Strike</th>
+        <th class="border font-bold px-2 py-1">Operations</th>
+        <th class="text-green-700 font-bold px-2 py-1">Put Bid</th>
+        <th class="text-red-500 font-bold px-2 py-1">Put Ask</th>
       </tr>
     </thead>
-
-    <!-- Body -->
     <tbody>
-      @for(options of optionsData; track options) {
-      <tr class="border-b border-gray-700 hover:bg-gray-800">
-        <td class="text-green-500 p-2 text-center">
-          {{ options[1][1].best_bid || "-" }}
+      <tr class="border" *ngFor="let options of Array.from(optionsData)">
+        <td class="text-green-700 px-2 py-1">
+          {{ options[1]?.[0]?.best_bid ?? '-' }}
         </td>
-        <td class="text-red-500 p-2 text-center">
-          {{ options[1][1].best_ask || "-" }}
+        <td class="text-red-500 px-2 py-1">
+          {{ options[1]?.[0]?.best_ask ?? '-' }}
         </td>
-        <td class="font-bold p-2 text-center bg-gray-800">{{ options[0] }}</td>
-        <td class="text-green-500 p-2 text-center">
-          {{ options[1][0].best_bid || "-" }}
+        <td class="border px-2 py-1">
+          <button
+            matTooltip="Buy"
+            class="cursor-pointer bg-green-700 hover:bg-green-900 text-white font-bold px-3 py-1 m-1 rounded-md"
+          >
+            B
+          </button>
+          <button
+            matTooltip="Sell"
+            class="cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold px-3 py-1 m-1 rounded-md"
+          >
+            S
+          </button>
         </td>
-        <td class="text-red-500 p-2 text-center">
-          {{ options[1][0].best_ask || "-" }}
+        <td class="border font-bold px-2 py-1">{{ options[0] ?? "-" }}</td>
+        <td class="border px-2 py-1">
+          <button
+            matTooltip="Buy"
+            class="cursor-pointer bg-green-700 hover:bg-green-900 text-white font-bold px-3 py-1 m-1 rounded-md"
+          >
+            B
+          </button>
+          <button
+            matTooltip="Sell"
+            class="cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold px-3 py-1 m-1 rounded-md"
+          >
+            S
+          </button>
+        </td>
+        <td class="text-green-700 px-2 py-1">
+          {{ options[1]?.[1]?.best_bid ?? '-' }}
+        </td>
+        <td class="text-red-500 px-2 py-1">
+          {{ options[1]?.[1]?.best_ask ?? '-' }}
         </td>
       </tr>
-      }
     </tbody>
   </table>
 </div>

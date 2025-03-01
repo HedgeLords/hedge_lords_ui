@@ -7,10 +7,11 @@ import { SettingsService } from '../../services/settings.service';
 import { RestClientService } from '../../services/rest-client.service';
 import { WebsocketService } from '../../services/websocket.service';
 import { Subscription, combineLatest, switchMap, of } from 'rxjs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-options-chain',
-  imports: [CommonModule, MatTableModule, MatSortModule],
+  imports: [CommonModule, MatTableModule, MatSortModule, MatTooltipModule],
   templateUrl: './options-chain.component.html',
   styleUrl: './options-chain.component.scss',
   providers: [SettingsService, RestClientService, WebsocketService],
@@ -18,6 +19,7 @@ import { Subscription, combineLatest, switchMap, of } from 'rxjs';
 export class OptionsChainComponent {
   private subscriptions: Subscription[] = [];
   public optionsData: Map<number, SimpleTicker[]> = new Map();
+  Array = Array;
 
   constructor(
     private settingsService: SettingsService,

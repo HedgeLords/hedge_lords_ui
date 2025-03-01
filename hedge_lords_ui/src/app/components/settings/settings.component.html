@@ -1,8 +1,5 @@
-<div
-  class="settings-container bg-zinc-50 w-full h-full p-4"
-  style="overflow-y: auto"
->
-  <h1 class="text-3xl pb-4">Options Strategy Trader</h1>
+<div class="settings-container bg-zinc-50 w-full h-full p-4" style="overflow-y: auto">
+  <h1 class="text-3xl pb-4">Settings</h1>
   <mat-accordion>
     <mat-expansion-panel [expanded]="true">
       <mat-expansion-panel-header>
@@ -33,6 +30,9 @@
           matInput
           [matDatepicker]="picker"
           [(ngModel)]="selectedExpiryDate"
+          (dateChange)="onExpiryDateChange($event)"
+          placeholder="Choose a date"
+          title="Expiry Date"
         />
         <mat-datepicker-toggle
           matIconSuffix
@@ -41,7 +41,7 @@
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
       <div class="w-full flex justify-end">
-        <button mat-fab extended class="mb-4">
+        <button mat-fab extended color="primary" class="subscribe-button" (click)="onSubscribe()">
           <mat-icon>download</mat-icon>
           Subscribe
         </button>

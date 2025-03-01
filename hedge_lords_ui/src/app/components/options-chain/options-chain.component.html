@@ -1,60 +1,43 @@
-<div class="options-chain h-full">
-  <table class="w-full text-center overflow-y-auto" style="max-height: 150px">
-    <thead>
-      <tr class="border">
-        <th class="text-green-700 font-bold px-2 py-1">Call Bid</th>
-        <th class="text-red-500 font-bold px-2 py-1">Call Ask</th>
-        <th class="border font-bold px-2 py-1">Operations</th>
-        <th class="border font-bold px-2 py-1">Strike</th>
-        <th class="border font-bold px-2 py-1">Operations</th>
-        <th class="text-green-700 font-bold px-2 py-1">Put Bid</th>
-        <th class="text-red-500 font-bold px-2 py-1">Put Ask</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="border" *ngFor="let options of Array.from(optionsData)">
-        <td class="text-green-700 px-2 py-1">
-          {{ options[1]?.[0]?.best_bid ?? '-' }}
-        </td>
-        <td class="text-red-500 px-2 py-1">
-          {{ options[1]?.[0]?.best_ask ?? '-' }}
-        </td>
-        <td class="border px-2 py-1">
-          <button
-            matTooltip="Buy"
-            class="cursor-pointer bg-green-700 hover:bg-green-900 text-white font-bold px-3 py-1 m-1 rounded-md"
-          >
-            B
-          </button>
-          <button
-            matTooltip="Sell"
-            class="cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold px-3 py-1 m-1 rounded-md"
-          >
-            S
-          </button>
-        </td>
-        <td class="border font-bold px-2 py-1">{{ options[0] ?? "-" }}</td>
-        <td class="border px-2 py-1">
-          <button
-            matTooltip="Buy"
-            class="cursor-pointer bg-green-700 hover:bg-green-900 text-white font-bold px-3 py-1 m-1 rounded-md"
-          >
-            B
-          </button>
-          <button
-            matTooltip="Sell"
-            class="cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold px-3 py-1 m-1 rounded-md"
-          >
-            S
-          </button>
-        </td>
-        <td class="text-green-700 px-2 py-1">
-          {{ options[1]?.[1]?.best_bid ?? '-' }}
-        </td>
-        <td class="text-red-500 px-2 py-1">
-          {{ options[1]?.[1]?.best_ask ?? '-' }}
-        </td>
-      </tr>
-    </tbody>
-  </table>
+<div class="options-chain">
+  <!-- Futures Data Display -->
+  <div *ngIf="futuresData" class="futures-data bg-gray-100 rounded-md">
+    <div class="grid grid-cols-4 gap-2">
+      <div>
+        <span class="text-xs font-semibold">{{ futuresData.symbol }}</span>
+      </div>
+      <div>
+        <span class="text-green-700 text-xs">Bid: {{ futuresData.best_bid }}</span>
+      </div>
+      <div>
+        <span class="text-red-500 text-xs">Ask: {{ futuresData.best_ask }}</span>
+      </div>
+      <div>
+        <span class="text-blue-600 text-xs">Spot: {{ futuresData.spot_price }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options Chain Table -->
+  <div class="table-container">
+    <table class="w-full text-center border-table">
+      <thead>
+        <tr>
+          <th class="text-green-700">Call Bid</th>
+          <th class="text-red-500">Call Ask</th>
+          <th class="border-x">Strike</th>
+          <th class="text-green-700">Put Bid</th>
+          <th class="text-red-500">Put Ask</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let option of optionsData">
+          <td class="text-green-700">{{ option.call?.best_bid ?? '-' }}</td>
+          <td class="text-red-500">{{ option.call?.best_ask ?? '-' }}</td>
+          <td class="border-x font-bold">{{ option.call?.strike_price ?? option.put?.strike_price ?? '-' }}</td>
+          <td class="text-green-700">{{ option.put?.best_bid ?? '-' }}</td>
+          <td class="text-red-500">{{ option.put?.best_ask ?? '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

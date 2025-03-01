@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Sort, MatSortModule, MatSort } from '@angular/material/sort';
 import { OptionsTicker, SimpleTicker } from '../../models/ticker.model';
@@ -8,6 +8,7 @@ import { RestClientService } from '../../services/rest-client.service';
 import { WebsocketService } from '../../services/websocket.service';
 import { Subscription, combineLatest, switchMap, of } from 'rxjs';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
 
 @Component({
   selector: 'app-options-chain',
@@ -16,81 +17,59 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   styleUrl: './options-chain.component.scss',
   providers: [SettingsService, RestClientService, WebsocketService],
 })
-export class OptionsChainComponent {
+export class OptionsChainComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = [];
-  public optionsData: Map<number, SimpleTicker[]> = new Map();
-  Array = Array;
+  public optionsData: any[] = [];
+  public futuresData: any = null;
+  private socket$: WebSocketSubject<any>;
 
   constructor(
     private settingsService: SettingsService,
     private restClientService: RestClientService,
     private websocketService: WebsocketService
-  ) {}
-
-  ngOnInit() {
-    // Combine selected coin and expiry date observables
-    const subscription = combineLatest([
-      this.settingsService.selectedCoin,
-      this.settingsService.selectedExpiryDate,
-    ])
-      .pipe(
-        switchMap(([coin, expiryDate]) => {
-          if (!coin || !expiryDate) return of([]);
-          return this.restClientService.getFilteredOptions(coin, expiryDate);
-        })
-      )
-      .subscribe((contracts) => {
-        if (contracts.length > 0) {
-          // Connect websocket with filtered contracts
-          this.websocketService.connect(contracts);
-          // Subscribe to options updates
-          const optionsSubscription = this.websocketService.options.subscribe(
-            (optionsMap) => {
-              if (optionsMap.size > 0) {
-                this.groupOptionsByStrike(optionsMap);
-              }
-            }
-          );
-          this.subscriptions.push(optionsSubscription);
-        }
-      });
-    this.subscriptions.push(subscription);
+  ) {
+    this.socket$ = webSocket('ws://localhost:8001/stream/options');
   }
 
-  private groupOptionsByStrike(optionsMap: Map<string, OptionsTicker>) {
-    // Create a new Map with sorted strikes
-    const sortedStrikes = Array.from(optionsMap.values())
-      .map((ticker) => parseInt(ticker.strike_price))
-      .filter((value, index, self) => self.indexOf(value) === index) // Get unique strikes
-      .sort((a, b) => a - b); // Sort in ascending order
-
-    const newOptionsData = new Map<number, SimpleTicker[]>();
-
-    // Initialize the map with sorted strikes
-    sortedStrikes.forEach((strike) => {
-      newOptionsData.set(strike, []);
+  ngOnInit() {
+    this.socket$.subscribe({
+      next: (message) => {
+        if (message.purpose === 'prices') {
+          this.futuresData = message.options_chain.find(
+            (item: any) => item.contract_type === 'perpetual_futures'
+          );
+          
+          const optionsOnly = message.options_chain.filter(
+            (item: any) => item.contract_type !== 'perpetual_futures'
+          );
+          this.optionsData = this.groupAndSortOptions(optionsOnly);
+        }
+      },
+      error: (err) => console.error('WebSocket error:', err),
+      complete: () => console.warn('WebSocket connection closed.')
     });
+  }
 
-    // Populate the options
-    Array.from(optionsMap.values()).forEach((ticker) => {
-      const simpleTicker = new SimpleTicker(ticker);
-      const strike = simpleTicker.strike_price;
-      newOptionsData.get(strike)!.push(simpleTicker);
-    });
+  private groupAndSortOptions(options: any[]): any[] {
+    const grouped = options.reduce((acc, option) => {
+      const strike = option.strike_price;
+      if (!acc[strike]) {
+        acc[strike] = { call: null, put: null };
+      }
+      if (option.contract_type === 'call_options') {
+        acc[strike].call = option;
+      } else if (option.contract_type === 'put_options') {
+        acc[strike].put = option;
+      }
+      return acc;
+    }, {});
 
-    // Sort options within each strike price group (calls at 0, puts at 1)
-    newOptionsData.forEach((tickers, strike) => {
-      tickers.sort((a, b) => (a.contract_type === 'put_options' ? 1 : -1));
-    });
-
-    this.optionsData = newOptionsData;
+    return Object.keys(grouped)
+      .sort((a, b) => parseFloat(a) - parseFloat(b))
+      .map(strike => grouped[strike]);
   }
 
   ngOnDestroy() {
-    // Unsubscribe from all subscriptions
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
-
-    // Disconnect websocket
-    this.websocketService.disconnect();
+    this.socket$.complete();
   }
 }

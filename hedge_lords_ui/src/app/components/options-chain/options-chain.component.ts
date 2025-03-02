@@ -1,75 +1,67 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { Sort, MatSortModule, MatSort } from '@angular/material/sort';
-import { OptionsTicker, SimpleTicker } from '../../models/ticker.model';
-import { SettingsService } from '../../services/settings.service';
-import { RestClientService } from '../../services/rest-client.service';
-import { WebsocketService } from '../../services/websocket.service';
-import { Subscription, combineLatest, switchMap, of } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { MatTableModule } from '@angular/material/table';
+import { MatSortModule } from '@angular/material/sort';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { WebSocketSubject, webSocket } from 'rxjs/webSocket';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { PositionService } from '../../services/position.service';
+import { OptionsDataService } from '../../services/options-data.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-options-chain',
-  imports: [CommonModule, MatTableModule, MatSortModule, MatTooltipModule],
+  imports: [CommonModule, MatTableModule, MatSortModule, MatTooltipModule, MatButtonModule, MatIconModule],
   templateUrl: './options-chain.component.html',
   styleUrl: './options-chain.component.scss',
-  providers: [SettingsService, RestClientService, WebsocketService],
+  standalone: true
 })
 export class OptionsChainComponent implements OnInit, OnDestroy {
-  private subscriptions: Subscription[] = [];
   public optionsData: any[] = [];
   public futuresData: any = null;
-  private socket$: WebSocketSubject<any>;
+  private currentSymbol: string = '';
+  private subscriptions: Subscription[] = [];
 
   constructor(
-    private settingsService: SettingsService,
-    private restClientService: RestClientService,
-    private websocketService: WebsocketService
-  ) {
-    this.socket$ = webSocket('ws://localhost:8001/stream/options');
-  }
+    private positionService: PositionService,
+    private optionsDataService: OptionsDataService
+  ) {}
 
   ngOnInit() {
-    this.socket$.subscribe({
-      next: (message) => {
-        if (message.purpose === 'prices') {
-          this.futuresData = message.options_chain.find(
-            (item: any) => item.contract_type === 'perpetual_futures'
-          );
-          
-          const optionsOnly = message.options_chain.filter(
-            (item: any) => item.contract_type !== 'perpetual_futures'
-          );
-          this.optionsData = this.groupAndSortOptions(optionsOnly);
-        }
-      },
-      error: (err) => console.error('WebSocket error:', err),
-      complete: () => console.warn('WebSocket connection closed.')
-    });
+    this.subscriptions.push(
+      this.optionsDataService.getOptionsData().subscribe(data => {
+        this.optionsData = data;
+      }),
+      
+      this.optionsDataService.getFuturesData().subscribe(data => {
+        this.futuresData = data;
+      }),
+      
+      this.optionsDataService.getCurrentSymbol().subscribe(symbol => {
+        this.currentSymbol = symbol;
+      })
+    );
   }
 
-  private groupAndSortOptions(options: any[]): any[] {
-    const grouped = options.reduce((acc, option) => {
-      const strike = option.strike_price;
-      if (!acc[strike]) {
-        acc[strike] = { call: null, put: null };
-      }
-      if (option.contract_type === 'call_options') {
-        acc[strike].call = option;
-      } else if (option.contract_type === 'put_options') {
-        acc[strike].put = option;
-      }
-      return acc;
-    }, {});
+  selectOption(option: any, type: 'call' | 'put'): void {
+    if (!option) return;
+    
+    this.positionService.addPosition(
+      type,
+      option.strike_price,
+      this.currentSymbol
+    );
+  }
 
-    return Object.keys(grouped)
-      .sort((a, b) => parseFloat(a) - parseFloat(b))
-      .map(strike => grouped[strike]);
+  selectStrikePrice(option: any): void {
+    if (option.call) {
+      this.selectOption(option.call, 'call');
+    } else if (option.put) {
+      this.selectOption(option.put, 'put');
+    }
   }
 
   ngOnDestroy() {
-    this.socket$.complete();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

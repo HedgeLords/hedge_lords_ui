@@ -5,10 +5,12 @@ import { Subscription } from 'rxjs';
 import { SettingsService } from '../../services/settings.service';
 import { HttpClient } from '@angular/common/http';
 import { OptionsChainComponent } from '../options-chain/options-chain.component';
+import { PositionAnalysisComponent } from '../position-analysis/position-analysis.component';
 
 @Component({
   selector: 'app-trading',
-  imports: [MatGridListModule, OptionsChainComponent],
+  standalone: true,
+  imports: [OptionsChainComponent, PositionAnalysisComponent],
   templateUrl: './trading.component.html',
   styleUrl: './trading.component.scss',
   providers: [SettingsService, RestClientService],

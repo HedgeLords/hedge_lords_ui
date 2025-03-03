@@ -1,14 +1,12 @@
 <div class="position-analysis">
   <div class="header-actions">
     <h3 class="text-lg font-semibold">Selected Positions</h3>
+    <div class="update-info">Last update: {{ lastUpdateTime }}</div>
     <button mat-icon-button color="warn" (click)="clearAll()" *ngIf="livePositions.length > 0" 
             matTooltip="Clear all positions">
       <mat-icon>delete_sweep</mat-icon>
     </button>
   </div>
-  
-  <!-- Add a hidden timestamp to force change detection -->
-  <div style="display: none;">{{ Date.now() }}</div>
   
   <div class="empty-state" *ngIf="livePositions.length === 0">
     <p>No positions selected. Click on option prices in the Options Chain to add them here.</p>

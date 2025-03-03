@@ -22,21 +22,24 @@ export class PositionAnalysisComponent implements OnInit, OnDestroy {
   livePositions: LivePosition[] = [];
   private subscriptions: Subscription[] = [];
   Date = Date; // For the timestamp in the template
+  lastUpdateTime: string = 'Never';
   
   constructor(private positionService: PositionService) {}
   
   ngOnInit(): void {
-    console.log('PositionAnalysisComponent initialized');
-    
     // Subscribe to the combined stream of positions and live data
-    // and add it to the subscriptions array
     this.subscriptions.push(
       this.positionService.getLivePositions().subscribe(
         positions => {
-          console.log(`Received ${positions.length} live positions:`, positions);
           this.livePositions = positions;
+          // Update the timestamp
+          const now = new Date();
+          this.lastUpdateTime = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${now.getMilliseconds()}`;
         },
-        error => console.error('Error in live positions subscription:', error)
+        error => {
+          // Show error in UI instead of console
+          this.lastUpdateTime = `Error: ${error.message}`;
+        }
       )
     );
   }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, webSocket, WebSocketSubject } from 'rxjs';
-import { map, share } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,7 @@ export class OptionsDataService {
     this.socket$ = webSocket('ws://localhost:8001/stream/options');
     
     this.socket$.subscribe({
-      next: (message) => {
+      next: (message: any) => {
         if (message.purpose === 'prices') {
           console.log('WebSocket received new price data');
           
@@ -37,7 +38,7 @@ export class OptionsDataService {
           this.optionsData$.next(groupedOptions);
         }
       },
-      error: (err) => console.error('WebSocket error:', err),
+      error: (err: any) => console.error('WebSocket error:', err),
       complete: () => console.warn('WebSocket connection closed.')
     });
   }
@@ -71,7 +72,7 @@ export class OptionsDataService {
   }
 
   private groupAndSortOptions(options: any[]): any[] {
-    const grouped = options.reduce((acc, option) => {
+    const grouped = options.reduce((acc: any, option: any) => {
       const strike = option.strike_price;
       if (!acc[strike]) {
         acc[strike] = { call: null, put: null };

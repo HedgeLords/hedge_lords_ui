@@ -18,8 +18,6 @@ export class OptionsDataService {
     this.socket$.subscribe({
       next: (message: any) => {
         if (message.purpose === 'prices') {
-          console.log('WebSocket received new price data');
-          
           const futures = message.options_chain.find(
             (item: any) => item.contract_type === 'perpetual_futures'
           );
@@ -34,7 +32,6 @@ export class OptionsDataService {
           );
           
           const groupedOptions = this.groupAndSortOptions(optionsOnly);
-          console.log(`Processed ${groupedOptions.length} option rows`);
           this.optionsData$.next(groupedOptions);
         }
       },
@@ -64,9 +61,7 @@ export class OptionsDataService {
           (type === 'put' && opt.put?.strike_price === strikePrice)
         );
         
-        const result = type === 'call' ? row?.call : row?.put;
-        console.log(`Finding ${type} option with strike ${strikePrice}: ${result ? 'Found' : 'Not found'}`);
-        return result;
+        return type === 'call' ? row?.call : row?.put;
       })
     );
   }

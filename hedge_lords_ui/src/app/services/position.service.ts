@@ -30,35 +30,26 @@ export class PositionService {
   
   // This is the key method that combines user selections with live data
   getLivePositions(): Observable<LivePosition[]> {
-    console.log('getLivePositions called');
     return combineLatest([
       this.selectedPositions.asObservable(),
       this.optionsDataService.getOptionsData()
     ]).pipe(
       map(([selections, optionsData]) => {
-        console.log(`Combining ${selections.length} selections with options data`);
-        
-        const result = selections.map(selection => {
+        return selections.map(selection => {
           const option = this.findOptionInData(selection.type, selection.strikePrice, optionsData);
           
-          const livePosition = {
+          return {
             ...selection,
             bestBid: option ? option.best_bid : null,
             bestAsk: option ? option.best_ask : null
           };
-          
-          console.log(`Live position: ${selection.type} ${selection.strikePrice} - Bid: ${livePosition.bestBid}, Ask: ${livePosition.bestAsk}`);
-          return livePosition;
         });
-        
-        return result;
       })
     );
   }
   
   private findOptionInData(type: 'call' | 'put', strikePrice: number, optionsData: any[]): any {
     if (!optionsData || optionsData.length === 0) {
-      console.log('No options data available for lookup');
       return null;
     }
     
@@ -67,13 +58,10 @@ export class PositionService {
       (type === 'put' && opt.put?.strike_price === strikePrice)
     );
     
-    const result = type === 'call' ? row?.call : row?.put;
-    console.log(`Finding ${type} option with strike ${strikePrice} in data: ${result ? 'Found' : 'Not found'}`);
-    return result;
+    return type === 'call' ? row?.call : row?.put;
   }
 
   addPosition(type: 'call' | 'put', strikePrice: number, symbol: string): void {
-    console.log(`Adding position: ${type} ${strikePrice}`);
     const currentPositions = this.selectedPositions.getValue();
     
     // Check if position already exists
@@ -82,7 +70,6 @@ export class PositionService {
     );
     
     if (exists) {
-      console.log('Position already exists, not adding duplicate');
       return;
     }
     
@@ -94,7 +81,6 @@ export class PositionService {
       action: 'buy', // Default action
     };
     
-    console.log('Adding new position to selected positions');
     this.selectedPositions.next([...currentPositions, newPosition]);
   }
 

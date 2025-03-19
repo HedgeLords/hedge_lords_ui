@@ -11,10 +11,17 @@ import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-options-chain',
-  imports: [CommonModule, MatTableModule, MatSortModule, MatTooltipModule, MatButtonModule, MatIconModule],
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatSortModule,
+    MatTooltipModule,
+    MatButtonModule,
+    MatIconModule,
+  ],
   templateUrl: './options-chain.component.html',
   styleUrl: './options-chain.component.scss',
-  standalone: true
+  standalone: true,
 })
 export class OptionsChainComponent implements OnInit, OnDestroy {
   public optionsData: any[] = [];
@@ -29,15 +36,15 @@ export class OptionsChainComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscriptions.push(
-      this.optionsDataService.getOptionsData().subscribe(data => {
+      this.optionsDataService.getOptionsData().subscribe((data) => {
         this.optionsData = data;
       }),
-      
-      this.optionsDataService.getFuturesData().subscribe(data => {
+
+      this.optionsDataService.getFuturesData().subscribe((data) => {
         this.futuresData = data;
       }),
-      
-      this.optionsDataService.getCurrentSymbol().subscribe(symbol => {
+
+      this.optionsDataService.getCurrentSymbol().subscribe((symbol) => {
         this.currentSymbol = symbol;
       })
     );
@@ -45,7 +52,7 @@ export class OptionsChainComponent implements OnInit, OnDestroy {
 
   selectOption(option: any, type: 'call' | 'put'): void {
     if (!option) return;
-    
+
     this.positionService.addPosition(
       type,
       option.strike_price,
@@ -62,6 +69,6 @@ export class OptionsChainComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
 }

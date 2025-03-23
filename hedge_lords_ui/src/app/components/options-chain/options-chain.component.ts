@@ -49,7 +49,8 @@ export class OptionsChainComponent implements OnInit, OnDestroy {
     this.positionService.addPosition(
       type,
       option.strike_price,
-      this.currentSymbol
+      this.currentSymbol,
+      option.expiry_date
     );
   }
 

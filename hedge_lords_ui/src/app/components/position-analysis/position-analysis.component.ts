@@ -4,60 +4,84 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { PositionService, LivePosition } from '../../services/position.service';
+import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-position-analysis',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    FormsModule
-  ],
+  imports: [CommonModule, MatButtonModule, MatIconModule, FormsModule],
   templateUrl: './position-analysis.component.html',
-  styleUrl: './position-analysis.component.scss'
+  styleUrls: ['./position-analysis.component.scss'],
 })
 export class PositionAnalysisComponent implements OnInit, OnDestroy {
   livePositions: LivePosition[] = [];
   private subscriptions: Subscription[] = [];
-  Date = Date; // For the timestamp in the template
-  lastUpdateTime: string = 'Never';
-  
-  constructor(private positionService: PositionService) {}
-  
+  Date = Date; // Used for formatting timestamps in the template
+  lastUpdateTime: string = 'Never'; // Tracks the last time positions were updated
+
+  constructor(
+    private positionService: PositionService,
+    private payoffService: PayoffWebsocketService
+  ) {}
+
   ngOnInit(): void {
-    // Subscribe to the combined stream of positions and live data
+    // Subscribe to live position updates and refresh the displayed data
     this.subscriptions.push(
       this.positionService.getLivePositions().subscribe(
-        positions => {
+        (positions) => {
           this.livePositions = positions;
-          // Update the timestamp
-          const now = new Date();
-          this.lastUpdateTime = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${now.getMilliseconds()}`;
+          this.updateTimestamp();
         },
-        error => {
-          // Show error in UI instead of console
+        (error) => {
           this.lastUpdateTime = `Error: ${error.message}`;
         }
       )
     );
   }
-  
+
+  /**
+   * Updates the timestamp with the current time.
+   */
+  updateTimestamp(): void {
+    const now = new Date();
+    this.lastUpdateTime = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${now.getMilliseconds()}`;
+  }
+
+  /**
+   * Handles the action change for a specific position (buy/sell).
+   * Updates the position action in the service and notifies the server.
+   *
+   * @param position - The position being updated.
+   * @param action - The selected action ('buy' or 'sell').
+   */
   onActionChange(position: LivePosition, action: 'buy' | 'sell'): void {
     this.positionService.updatePositionAction(position.id, action);
+    //graph is independent of action
+    // this.payoffService.selectContract(position, action);
   }
-  
-  removePosition(id: string): void {
-    this.positionService.removePosition(id);
+
+  /**
+   * Removes a position by ID and notifies the server about the deselection.
+   *
+   * @param position - The position to remove.
+   */
+  removePosition(position: LivePosition): void {
+    this.positionService.removePosition(position.id);
   }
-  
+
+  /**
+   * Clears all positions and notifies the server by deselecting each contract.
+   */
   clearAll(): void {
+    
     this.positionService.clearPositions();
   }
-  
+
+  /**
+   * Unsubscribes from all subscriptions to prevent memory leaks.
+   */
   ngOnDestroy(): void {
-    // Unsubscribe from all subscriptions
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
   }
-} 
+}

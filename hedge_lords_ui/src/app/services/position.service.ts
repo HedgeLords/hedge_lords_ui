@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { OptionsDataService } from './options-data.service';
+import { PayoffWebsocketService } from './payoff-websocket.service';
 
 export interface PositionSelection {
   id: string;
@@ -9,6 +10,8 @@ export interface PositionSelection {
   strikePrice: number;
   symbol: string;
   action: 'buy' | 'sell';
+  expirationDate: string;
+  underlying: string;
 }
 
 export interface LivePosition extends PositionSelection {
@@ -22,7 +25,10 @@ export interface LivePosition extends PositionSelection {
 export class PositionService {
   private selectedPositions = new BehaviorSubject<PositionSelection[]>([]);
   
-  constructor(private optionsDataService: OptionsDataService) {}
+  constructor(
+    private optionsDataService: OptionsDataService,
+    private payoffService: PayoffWebsocketService
+  ) {}
 
   getSelectedPositions(): Observable<PositionSelection[]> {
     return this.selectedPositions.asObservable();
@@ -61,7 +67,7 @@ export class PositionService {
     return type === 'call' ? row?.call : row?.put;
   }
 
-  addPosition(type: 'call' | 'put', strikePrice: number, symbol: string): void {
+  addPosition(type: 'call' | 'put', strikePrice: number, symbol: string, expiryDate: string): void {
     const currentPositions = this.selectedPositions.getValue();
     
     // Check if position already exists
@@ -73,14 +79,22 @@ export class PositionService {
       return;
     }
     
+    // Extract underlying asset (first 3 letters of symbol)
+    const underlying = symbol.substring(0, 3);
+    
     const newPosition: PositionSelection = {
       id: `${type}-${strikePrice}-${Date.now()}`,
       type,
       strikePrice,
       symbol,
       action: 'buy', // Default action
+      expirationDate: expiryDate,
+      underlying
     };
     
+    // Send WebSocket message immediately with default 'buy' action
+    this.payoffService.selectContract(newPosition, 'buy');
+    // Add to selected positions
     this.selectedPositions.next([...currentPositions, newPosition]);
   }
 
@@ -94,11 +108,28 @@ export class PositionService {
 
   removePosition(id: string): void {
     const currentPositions = this.selectedPositions.getValue();
-    const updatedPositions = currentPositions.filter(position => position.id !== id);
-    this.selectedPositions.next(updatedPositions);
+    const positionToRemove = currentPositions.find(p => p.id === id);
+    
+    if (positionToRemove) {
+      // Send deselect message before removing
+      this.payoffService.deselectContract(positionToRemove);
+      console.log("removing")
+      
+      // Remove from selected positions
+      const updatedPositions = currentPositions.filter(position => position.id !== id);
+      this.selectedPositions.next(updatedPositions);
+    }
   }
 
   clearPositions(): void {
+    const currentPositions = this.selectedPositions.getValue();
+    
+    // Send deselect messages for all positions
+    currentPositions.forEach(position => {
+      this.payoffService.deselectContract(position);
+    });
+    
+    // Clear all positions
     this.selectedPositions.next([]);
   }
 } 

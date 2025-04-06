@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { OptionsTicker, FuturesTicker } from '../models/ticker.model';
-import { RestClientService } from './rest-client.service';
 
 interface SubscribeMessage {
   type: string;

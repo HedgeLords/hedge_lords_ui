@@ -1,0 +1,48 @@
+.data-display {
+  position: relative;
+  padding: 20px;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  color: #ffffff;
+  min-height: 150px;
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.data-info {
+  margin-bottom: 20px;
+}
+
+p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.refresh-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.refresh-button svg {
+  width: 14px;
+  height: 14px;
+}

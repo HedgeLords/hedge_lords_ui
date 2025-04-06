@@ -4,8 +4,9 @@ import { Subscription } from 'rxjs';
 import { SettingsService } from '../../services/settings.service';
 import { OptionsChainComponent } from '../options-chain/options-chain.component';
 import { PositionAnalysisComponent } from '../position-analysis/position-analysis.component';
-import { PriceChartComponent } from '../price-chart/price-chart.component';
 import { HighchartsChartModule } from 'highcharts-angular';
+import { StraddleChartComponent } from '../straddle-chart/straddle-chart.component';
+import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
 
 @Component({
   selector: 'app-trading',
@@ -13,12 +14,16 @@ import { HighchartsChartModule } from 'highcharts-angular';
   imports: [
     OptionsChainComponent, 
     PositionAnalysisComponent,
-    PriceChartComponent,
-    HighchartsChartModule
+    HighchartsChartModule,
+    StraddleChartComponent
   ],
   templateUrl: './trading.component.html',
   styleUrl: './trading.component.scss',
-  providers: [SettingsService, RestClientService],
+  providers: [
+    SettingsService, 
+    RestClientService,
+    PayoffWebsocketService
+  ],
 })
 export class TradingComponent implements OnDestroy {
   private subscriptions: Subscription = new Subscription();

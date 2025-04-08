@@ -30,8 +30,7 @@ export class PayoffWebsocketService {
     x: [],
     y: [],
   });
-  private payoffX$ = new BehaviorSubject<any[]>([]);
-  private payoffY$ = new BehaviorSubject<any[]>([]);
+
 
   public payoffData$ = this.payoffDataSubject.asObservable();
 
@@ -43,7 +42,6 @@ export class PayoffWebsocketService {
 
   constructor() {
     // Don't establish connection in constructor
-    // Observables dont work in constructor
   }
 
   /**
@@ -63,7 +61,6 @@ export class PayoffWebsocketService {
     // Subscribe to WebSocket messages
     this.socket$.subscribe({
       next: (msg: PayoffMessage) => {
-        console.log('WebSocket message received:', msg);
         // Process message based on type
         switch (msg.type) {
           case 'payoff_update':
@@ -74,9 +71,6 @@ export class PayoffWebsocketService {
                 y: [...msg.data.y],
               };
               this.payoffDataSubject.next(newData);
-              this.payoffX$.next(msg.data.x);
-              this.payoffY$.next(msg.data.y);
-              // console.log('Updated data:', this.payoffDataSubject.value);
             }
             break;
 
@@ -109,13 +103,6 @@ export class PayoffWebsocketService {
     return this.payoffDataSubject.asObservable();
   }
 
-  getPayoffX(): Observable<number[]> {
-    return this.payoffData$.pipe(map((data) => data.x));
-  }
-
-  getPayoffY(): Observable<number[]> {
-    return this.payoffData$.pipe(map((data) => data.y));
-  }
 
   /**
    * Format expiry date from YYYY-MM-DD to DDMMYY
@@ -124,6 +111,7 @@ export class PayoffWebsocketService {
     const [year, month, day] = dateStr.split('-');
     return `${day}${month}${year.slice(-2)}`;
   }
+
 
   /**
    * Select a contract for payoff calculation
@@ -185,6 +173,7 @@ export class PayoffWebsocketService {
    * Send a message to the WebSocket server
    */
   private sendMessage(message: any): void {
+    console.log("socket",this.socket$)
     if (this.socket$ && this.isConnected) {
       this.socket$.next(message);
     } else {

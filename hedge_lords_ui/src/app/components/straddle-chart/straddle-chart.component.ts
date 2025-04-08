@@ -29,6 +29,7 @@ export type ChartOptions = {
   title: ApexTitleSubtitle;
   stroke: ApexStroke;
   dataLabels: ApexDataLabels;
+  annotations: ApexAnnotations;
 };
 
 @Component({
@@ -48,7 +49,6 @@ export class StraddleChartComponent implements OnInit, OnDestroy {
 
   constructor(
     private payoffService: PayoffWebsocketService,
-    private ngZone: NgZone,
     private cdr: ChangeDetectorRef
   ) {
     this.chartOptions = {
@@ -82,6 +82,24 @@ export class StraddleChartComponent implements OnInit, OnDestroy {
       dataLabels: {
         enabled: false,
       },
+      annotations: {
+        yaxis: [
+          {
+            y: 0,
+            strokeDashArray: 0,
+            borderColor: '#775DD0',
+            label: {
+              borderColor: '#775DD0',
+              style: {
+                color: '#fff',
+                background: '#775DD0',
+              },
+              text: 'Break Even',
+            },
+          },
+        ],
+      },
+      
     };
   }
 

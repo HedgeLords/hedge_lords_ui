@@ -149,11 +149,9 @@ export class StraddleChartComponent implements OnInit, OnDestroy {
   private pendingData: { x: number[]; y: number[] } | null = null;
 
   constructor(private payoffService: PayoffWebsocketService) {
-    console.log('StraddleChartComponent initialized');
   }
 
   ngOnInit(): void {
-    console.log('ngOnInit called');
     this.subscriptions.push(
       this.payoffService.payoffData$.subscribe({
         next: (data) => {

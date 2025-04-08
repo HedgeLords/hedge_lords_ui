@@ -11,6 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { SettingsService } from '../../services/settings.service';
 import { HttpClient } from '@angular/common/http';
+import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
 
 @Component({
   selector: 'app-settings',
@@ -48,7 +49,7 @@ export class SettingsComponent implements OnInit {
   selectedExpiryDate: Date | null = new Date();
   selectedLotSize: number = 0.0001;
 
-  constructor(private settingsService: SettingsService, private http: HttpClient) {}
+  constructor(private settingsService: SettingsService, private http: HttpClient, private payoffService:PayoffWebsocketService) {}
 
   ngOnInit(): void {
     this.settingsService.selectedExchange.subscribe((exchange) => {
@@ -97,6 +98,7 @@ export class SettingsComponent implements OnInit {
 
   onSubscribe() {
     // Force getting the latest date from the service
+    this.payoffService.connect();
     this.settingsService.selectedExpiryDate.subscribe(date => {
       this.selectedExpiryDate = date;
       

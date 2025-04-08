@@ -4,68 +4,118 @@ import {
   OnDestroy,
   NgZone,
   ChangeDetectorRef,
+  ViewEncapsulation,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
 import { Subscription } from 'rxjs';
+import {
+  ApexChart,
+  ApexAxisChartSeries,
+  ApexXAxis,
+  ApexYAxis,
+  ApexTitleSubtitle,
+  ApexStroke,
+  ApexDataLabels,
+  ChartComponent,
+  NgApexchartsModule,
+} from 'ng-apexcharts';
+
+export type ChartOptions = {
+  series: ApexAxisChartSeries;
+  chart: ApexChart;
+  xaxis: ApexXAxis;
+  yaxis: ApexYAxis;
+  title: ApexTitleSubtitle;
+  stroke: ApexStroke;
+  dataLabels: ApexDataLabels;
+};
 
 @Component({
   selector: 'app-straddle-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgApexchartsModule],
   templateUrl: './straddle-chart.component.html',
   styleUrls: ['./straddle-chart.component.scss'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class StraddleChartComponent implements OnInit, OnDestroy {
-  // Data size variables
-  public xDataSize: number = 0;
-  public yDataSize: number = 0;
+  public chartOptions: ChartOptions; // <- remove Partial<ChartOptions>
 
-  // Connection status
   public isConnected: boolean = false;
 
-  // Subscription management
   private subscriptions: Subscription[] = [];
 
   constructor(
     private payoffService: PayoffWebsocketService,
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    this.chartOptions = {
+      series: [
+        {
+          name: 'Payoff',
+          data: [],
+        },
+      ],
+      chart: {
+        type: 'line',
+        height: 350,
+      },
+      xaxis: {
+        title: {
+          text: 'Underlying Price',
+        },
+      },
+      yaxis: {
+        title: {
+          text: 'PnL',
+        },
+      },
+      title: {
+        text: 'Options Payoff Chart',
+        align: 'left',
+      },
+      stroke: {
+        curve: 'smooth',
+      },
+      dataLabels: {
+        enabled: false,
+      },
+    };
+  }
 
   ngOnInit(): void {
-    // Subscribe to payoff data
     this.subscriptions.push(
       this.payoffService.getPayoffData().subscribe((data) => {
-          this.xDataSize = data.x.length;
-          this.yDataSize = data.y.length;
-       
+        const points = data.x.map((xVal, i) => ({
+          x: xVal,
+          y: data.y[i],
+        }));
+        this.chartOptions.series = [
+          {
+            name: 'Payoff',
+            data: points,
+          },
+        ];
+        this.cdr.detectChanges(); // force change detection for ApexCharts to update
       })
     );
   }
 
   connectWebSocket(): void {
-      console.log('Connecting to WebSocket...');
-      this.payoffService.connect();
-      this.isConnected = true;
-      
+    console.log('Connecting to WebSocket...');
+    this.payoffService.connect();
+    this.isConnected = true;
   }
 
   refreshData(): void {
-      console.log('Requesting new data...');
-      this.payoffService.requestNewData();
-
-      // Also update from current value as fallback
-      const currentData = this.payoffService.payoffDataSubject.getValue();
-      this.xDataSize = currentData.x.length;
-      this.yDataSize = currentData.y.length;
-     
+    console.log('Requesting new data...');
+    this.payoffService.requestNewData();
   }
 
   ngOnDestroy(): void {
-    // Clean up subscriptions
     this.subscriptions.forEach((sub) => sub.unsubscribe());
-    // Disconnect WebSocket
     this.payoffService.disconnect();
   }
 }

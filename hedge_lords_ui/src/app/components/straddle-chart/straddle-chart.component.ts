@@ -41,10 +41,7 @@ export type ChartOptions = {
   encapsulation: ViewEncapsulation.None,
 })
 export class StraddleChartComponent implements OnInit, OnDestroy {
-  public chartOptions: ChartOptions; // <- remove Partial<ChartOptions>
-
-  public isConnected: boolean = false;
-
+  public chartOptions: ChartOptions;
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -52,36 +49,13 @@ export class StraddleChartComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {
     this.chartOptions = {
-      series: [
-        {
-          name: 'Payoff',
-          data: [],
-        },
-      ],
-      chart: {
-        type: 'line',
-        height: 350,
-      },
-      xaxis: {
-        title: {
-          text: 'Underlying Price',
-        },
-      },
-      yaxis: {
-        title: {
-          text: 'PnL',
-        },
-      },
-      title: {
-        text: 'Options Payoff Chart',
-        align: 'left',
-      },
-      stroke: {
-        curve: 'smooth',
-      },
-      dataLabels: {
-        enabled: false,
-      },
+      series: [{ name: 'Payoff', data: [] }],
+      chart: { type: 'line', height: 350 },
+      xaxis: { title: { text: 'Underlying Price' } },
+      yaxis: { title: { text: 'PnL' } },
+      title: { text: 'Options Payoff Chart', align: 'left' },
+      stroke: { curve: 'smooth' },
+      dataLabels: { enabled: false },
       annotations: {
         yaxis: [
           {
@@ -90,50 +64,32 @@ export class StraddleChartComponent implements OnInit, OnDestroy {
             borderColor: '#775DD0',
             label: {
               borderColor: '#775DD0',
-              style: {
-                color: '#fff',
-                background: '#775DD0',
-              },
+              style: { color: '#fff', background: '#775DD0' },
               text: 'Break Even',
             },
           },
         ],
       },
-      
     };
   }
 
   ngOnInit(): void {
     this.subscriptions.push(
-      this.payoffService.getPayoffData().subscribe((data) => {
-        const points = data.x.map((xVal, i) => ({
-          x: xVal,
-          y: data.y[i],
-        }));
-        this.chartOptions.series = [
-          {
-            name: 'Payoff',
-            data: points,
-          },
-        ];
-        this.cdr.detectChanges(); // force change detection for ApexCharts to update
+      this.payoffService.payoffData$.subscribe((data) => {
+        const points = data.x.map((xVal, i) => ({ x: xVal, y: data.y[i] }));
+        this.chartOptions.series = [{ name: 'Payoff', data: points }];
+        this.cdr.detectChanges();
       })
     );
-  }
 
-  connectWebSocket(): void {
-    console.log('Connecting to WebSocket...');
-    this.payoffService.connect();
-    this.isConnected = true;
+    this.refreshData(); // Fetch once on load
   }
 
   refreshData(): void {
-    console.log('Requesting new data...');
-    this.payoffService.requestNewData();
+    this.payoffService.refreshPayoffData();
   }
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
-    this.payoffService.disconnect();
   }
 }

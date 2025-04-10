@@ -21,9 +21,7 @@ import { PayoffWebsocketService } from '../../services/payoff-websocket.service'
   styleUrl: './trading.component.scss',
   providers: [
     SettingsService, 
-    RestClientService,
-    PayoffWebsocketService
-  ],
+    RestClientService  ],
 })
 export class TradingComponent implements OnDestroy {
   private subscriptions: Subscription = new Subscription();

@@ -93,7 +93,7 @@ export class PositionService {
     };
     
     // Send WebSocket message immediately with default 'buy' action
-    this.payoffService.selectContract(newPosition, 'buy');
+    // this.payoffService.selectContract(newPosition, 'buy');
     // Add to selected positions
     this.selectedPositions.next([...currentPositions, newPosition]);
   }
@@ -112,7 +112,7 @@ export class PositionService {
     
     if (positionToRemove) {
       // Send deselect message before removing
-      this.payoffService.deselectContract(positionToRemove);
+      // this.payoffService.deselectContract(positionToRemove);
       console.log("removing")
       
       // Remove from selected positions
@@ -126,7 +126,7 @@ export class PositionService {
     
     // Send deselect messages for all positions
     currentPositions.forEach(position => {
-      this.payoffService.deselectContract(position);
+      // this.payoffService.deselectContract(position);
     });
     
     // Clear all positions

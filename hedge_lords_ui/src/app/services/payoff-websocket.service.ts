@@ -2,6 +2,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { PositionSelection } from './position.service';
+import { HttpClient } from '@angular/common/http';
 
 // Define the message types for type safety
 export interface PayoffMessage {
@@ -19,177 +20,32 @@ export interface PayoffMessage {
   providedIn: 'root',
 })
 export class PayoffWebsocketService {
-  // WebSocket connection with proper initialization
-  private socket$: WebSocketSubject<any> | null = null;
+  private readonly API_URL = 'http://localhost:8001/stream/get-graph';
 
-  // Connection status
-  private isConnected = false;
-
-  // Private BehaviorSubjects
   public payoffDataSubject = new BehaviorSubject<{ x: number[]; y: number[] }>({
     x: [],
     y: [],
   });
 
-
   public payoffData$ = this.payoffDataSubject.asObservable();
 
-  // Selected contracts tracking
-  private selectedContracts: Set<string> = new Set();
+  constructor(private http: HttpClient) {}
 
-  // WebSocket URL
-  private readonly WEBSOCKET_URL = 'ws://localhost:8001/stream/trading';
-
-  constructor() {
-    // Don't establish connection in constructor
-  }
-
-  /**
-   * Connect to the WebSocket server
-   * This function can be called from the component
-   */
-  public connect(): void {
-    if (this.isConnected) {
-      console.log('WebSocket already connected');
-      return;
-    }
-
-    console.log('Establishing WebSocket connection...');
-    this.socket$ = webSocket(this.WEBSOCKET_URL);
-    this.isConnected = true;
-
-    // Subscribe to WebSocket messages
-    this.socket$.subscribe({
-      next: (msg: PayoffMessage) => {
-        // Process message based on type
-        switch (msg.type) {
-          case 'payoff_update':
-            if (msg.data) {
-              // Create new objects to ensure emission
-              const newData = {
-                x: [...msg.data.x],
-                y: [...msg.data.y],
-              };
-              this.payoffDataSubject.next(newData);
-            }
-            break;
-
-          case 'confirmation':
-            console.log('Received confirmation:', {
-              selected_contracts: msg.selected_contracts,
-              price_range_percentage: msg.price_range_percentage,
-            });
-            break;
-
-          default:
-            console.warn('Received unexpected message type:', msg.type);
+  public refreshPayoffData(): void {
+    this.http.post<PayoffMessage>(this.API_URL,{}).subscribe({
+     next: (response) => {
+        if (response.type === 'payoff_update' && response.data) {
+          this.payoffDataSubject.next({
+            x: response.data.x,
+            y: response.data.y,
+          });
+        } else {
+          console.warn('Unexpected response format:', response);
         }
       },
-      error: (err: any) => {
-        console.error('WebSocket error:', err);
-        this.isConnected = false;
-      },
-      complete: () => {
-        console.warn('WebSocket connection closed.');
-        this.isConnected = false;
+      error: (err) => {
+        console.error('Error fetching payoff data:', err);
       },
     });
-  }
-
-  /**
-   * Returns payoff data as an Observable
-   */
-  public getPayoffData(): Observable<{ x: number[]; y: number[] }> {
-    return this.payoffDataSubject.asObservable();
-  }
-
-
-  /**
-   * Format expiry date from YYYY-MM-DD to DDMMYY
-   */
-  private formatExpiryDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${day}${month}${year.slice(-2)}`;
-  }
-
-
-  /**
-   * Select a contract for payoff calculation
-   */
-  public selectContract(
-    position: PositionSelection,
-    action: 'buy' | 'sell'
-  ): void {
-    const optionType = position.type === 'call' ? 'C' : 'P';
-    const formattedExpiry = this.formatExpiryDate(position.expirationDate);
-    const formattedSymbol = `${optionType}-${position.underlying}-${position.strikePrice}-${formattedExpiry}`;
-
-    const message = {
-      type: 'select_contract',
-      symbol: formattedSymbol,
-      position: action,
-    };
-
-    this.sendMessage(message);
-    this.selectedContracts.add(formattedSymbol);
-  }
-
-  /**
-   * Deselect a contract from payoff calculation
-   */
-  public deselectContract(position: PositionSelection): void {
-    const optionType = position.type === 'call' ? 'C' : 'P';
-    const formattedExpiry = this.formatExpiryDate(position.expirationDate);
-    const formattedSymbol = `${optionType}-${position.underlying}-${position.strikePrice}-${formattedExpiry}`;
-
-    const message = {
-      type: 'deselect_contract',
-      symbol: formattedSymbol,
-    };
-
-    this.sendMessage(message);
-    this.selectedContracts.delete(formattedSymbol);
-  }
-
-  /**
-   * Request new payoff data from the server
-   */
-  public requestNewData(): void {
-    if (!this.isConnected) {
-      console.warn('WebSocket not connected. Cannot request data.');
-      return;
-    }
-
-    const message = {
-      type: 'request_update',
-      timestamp: Date.now(),
-    };
-
-    this.sendMessage(message);
-    console.log('New data requested from server');
-  }
-
-  /**
-   * Send a message to the WebSocket server
-   */
-  private sendMessage(message: any): void {
-    console.log("socket",this.socket$)
-    if (this.socket$ && this.isConnected) {
-      this.socket$.next(message);
-    } else {
-      console.error('WebSocket not connected. Cannot send message.');
-    }
-  }
-
-  /**
-   * Disconnect from the WebSocket server
-   */
-  public disconnect(): void {
-    if (this.socket$ && this.isConnected) {
-      this.socket$.complete();
-      this.socket$ = null;
-      this.isConnected = false;
-      console.log('WebSocket connection closed.');
-    }
   }
 }

@@ -97,9 +97,7 @@ export class SettingsComponent implements OnInit {
   }
 
   onSubscribe() {
-    // Force getting the latest date from the service
-    this.payoffService.connect();
-    this.settingsService.selectedExpiryDate.subscribe(date => {
+      this.settingsService.selectedExpiryDate.subscribe(date => {
       this.selectedExpiryDate = date;
       
       // Format the date correctly accounting for timezone

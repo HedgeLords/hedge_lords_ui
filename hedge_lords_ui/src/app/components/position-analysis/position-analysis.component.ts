@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { PositionService, LivePosition } from '../../services/position.service';
-import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -21,8 +20,7 @@ export class PositionAnalysisComponent implements OnInit, OnDestroy {
   lastUpdateTime: string = 'Never'; // Tracks the last time positions were updated
 
   constructor(
-    private positionService: PositionService,
-    private payoffService: PayoffWebsocketService
+    private positionService: PositionService
   ) {}
 
   ngOnInit(): void {
@@ -50,31 +48,31 @@ export class PositionAnalysisComponent implements OnInit, OnDestroy {
 
   /**
    * Handles the action change for a specific position (buy/sell).
-   * Updates the position action in the service and notifies the server.
+   * Updates the position action in the service.
    *
    * @param position - The position being updated.
    * @param action - The selected action ('buy' or 'sell').
    */
   onActionChange(position: LivePosition, action: 'buy' | 'sell'): void {
+    // PositionService will handle the API calls
     this.positionService.updatePositionAction(position.id, action);
-    //graph is independent of action
-    // this.payoffService.selectContract(position, action);
   }
 
   /**
-   * Removes a position by ID and notifies the server about the deselection.
+   * Removes a position by ID.
    *
    * @param position - The position to remove.
    */
   removePosition(position: LivePosition): void {
+    // PositionService will handle the API calls
     this.positionService.removePosition(position.id);
   }
 
   /**
-   * Clears all positions and notifies the server by deselecting each contract.
+   * Clears all positions.
    */
   clearAll(): void {
-    
+    // PositionService will handle the API calls
     this.positionService.clearPositions();
   }
 

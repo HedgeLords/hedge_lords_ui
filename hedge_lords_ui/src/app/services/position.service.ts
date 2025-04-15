@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, take } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { OptionsDataService } from './options-data.service';
 import { PayoffWebsocketService } from './payoff-websocket.service';
@@ -92,18 +92,45 @@ export class PositionService {
       underlying
     };
     
-    // Send WebSocket message immediately with default 'buy' action
-    // this.payoffService.selectContract(newPosition, 'buy');
     // Add to selected positions
     this.selectedPositions.next([...currentPositions, newPosition]);
+    
+    // Get the live position data (with bid/ask prices)
+    // Use take(1) to ensure we only subscribe once and then complete
+    this.getLivePositionById(newPosition.id).pipe(take(1)).subscribe(livePosition => {
+      if (livePosition) {
+        // Send message to API with default 'buy' action
+        this.payoffService.selectContract(livePosition, 'buy');
+      }
+    });
   }
 
   updatePositionAction(id: string, action: 'buy' | 'sell'): void {
     const currentPositions = this.selectedPositions.getValue();
+    const positionToUpdate = currentPositions.find(p => p.id === id);
+    const oldAction = positionToUpdate?.action;
+    
+    // Update positions in the observable
     const updatedPositions = currentPositions.map(position => 
       position.id === id ? { ...position, action } : position
     );
     this.selectedPositions.next(updatedPositions);
+    
+    // If the position exists and the action has changed, update the API
+    if (positionToUpdate && oldAction !== action) {
+      // Use take(1) to ensure we only subscribe once and then complete
+      this.getLivePositionById(id).pipe(take(1)).subscribe(livePosition => {
+        if (livePosition) {
+          // First deselect with old action if it exists
+          if (oldAction) {
+            this.payoffService.deselectContract(livePosition, oldAction);
+          }
+          
+          // Then select with new action
+          this.payoffService.selectContract(livePosition, action);
+        }
+      });
+    }
   }
 
   removePosition(id: string): void {
@@ -111,25 +138,47 @@ export class PositionService {
     const positionToRemove = currentPositions.find(p => p.id === id);
     
     if (positionToRemove) {
-      // Send deselect message before removing
-      // this.payoffService.deselectContract(positionToRemove);
-      console.log("removing")
-      
-      // Remove from selected positions
-      const updatedPositions = currentPositions.filter(position => position.id !== id);
-      this.selectedPositions.next(updatedPositions);
+      // First get the live position data with bid/ask prices
+      // Use take(1) to ensure we only subscribe once and then complete
+      this.getLivePositionById(id).pipe(take(1)).subscribe(livePosition => {
+        if (livePosition) {
+          // Send deselect message before removing
+          this.payoffService.deselectContract(livePosition, livePosition.action);
+        }
+        
+        // Remove from selected positions
+        const updatedPositions = currentPositions.filter(position => position.id !== id);
+        this.selectedPositions.next(updatedPositions);
+      });
     }
   }
 
   clearPositions(): void {
     const currentPositions = this.selectedPositions.getValue();
     
-    // Send deselect messages for all positions
-    currentPositions.forEach(position => {
-      // this.payoffService.deselectContract(position);
-    });
+    if (currentPositions.length === 0) {
+      return; // Nothing to clear
+    }
     
-    // Clear all positions
-    this.selectedPositions.next([]);
+    // Get all live positions with bid/ask data
+    // Use take(1) to ensure we only subscribe once and then complete
+    this.getLivePositions().pipe(take(1)).subscribe(livePositions => {
+      // Send deselect messages for all positions through payoff service
+      this.payoffService.clearAllContracts(livePositions);
+      
+      // Clear all positions locally
+      this.selectedPositions.next([]);
+    });
   }
-} 
+  
+  /**
+   * Gets a single live position by ID, combining the selection with real-time data
+   * @param id The position ID to find
+   * @returns An observable that emits the live position or undefined if not found
+   */
+  private getLivePositionById(id: string): Observable<LivePosition | undefined> {
+    return this.getLivePositions().pipe(
+      map(positions => positions.find(position => position.id === id))
+    );
+  }
+}

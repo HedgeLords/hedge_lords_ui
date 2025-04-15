@@ -9,9 +9,12 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SettingsService } from '../../services/settings.service';
 import { HttpClient } from '@angular/common/http';
 import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
+import { AnalysisService } from '../../services/analysis.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-settings',
@@ -23,6 +26,7 @@ import { PayoffWebsocketService } from '../../services/payoff-websocket.service'
     MatButtonModule,
     MatIconModule,
     MatExpansionModule,
+    MatDialogModule,
     FormsModule,
     KeyValuePipe,
   ],
@@ -49,7 +53,14 @@ export class SettingsComponent implements OnInit {
   selectedExpiryDate: Date | null = new Date();
   selectedLotSize: number = 0.0001;
 
-  constructor(private settingsService: SettingsService, private http: HttpClient, private payoffService:PayoffWebsocketService) {}
+  constructor(
+    private settingsService: SettingsService, 
+    private http: HttpClient, 
+    private payoffService: PayoffWebsocketService,
+    private analysisService: AnalysisService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     this.settingsService.selectedExchange.subscribe((exchange) => {
@@ -95,6 +106,75 @@ export class SettingsComponent implements OnInit {
   onLotSizeChange() {
     this.settingsService.setSelectedLotSize(this.selectedLotSize);
   }
+  
+  /**
+   * Update lot size on the server when the user clicks the button
+   */
+  updateLotSize() {
+    // Update local settings first
+    this.settingsService.setSelectedLotSize(this.selectedLotSize);
+    
+    // Then send to backend
+    this.analysisService.updateLotSize(this.selectedLotSize).subscribe({
+      next: (response) => {
+        console.log('Lot size updated successfully:', response);
+        this.showNotification('Lot size updated successfully');
+        
+        // Refresh payoff data to reflect the new lot size
+        this.payoffService.refreshPayoffData();
+      },
+      error: (error) => {
+        console.error('Error updating lot size:', error);
+        this.showNotification('Error updating lot size', true);
+      }
+    });
+  }
+  
+  /**
+   * Clear the current scenario after confirmation
+   */
+  clearScenario() {
+    // Use the browser's built-in confirm dialog
+    if (confirm('Are you sure you want to clear the current scenario? This action cannot be undone.')) {
+      // User confirmed the action
+      this.analysisService.clearScenario().subscribe({
+        next: (response) => {
+          console.log('Scenario cleared successfully:', response);
+          this.showNotification('Scenario cleared successfully');
+        },
+        error: (error) => {
+          console.error('Error clearing scenario:', error);
+          this.showNotification('Error clearing scenario', true);
+        }
+      });
+    }
+  }
+  
+  /**
+   * Run the Monte Carlo simulation
+   */
+  runSimulation() {
+    this.analysisService.runSimulation().subscribe({
+      next: (response) => {
+        console.log('Simulation completed successfully:', response);
+        this.showNotification('Simulation completed successfully');
+      },
+      error: (error) => {
+        console.error('Error running simulation:', error);
+        this.showNotification('Error running simulation', true);
+      }
+    });
+  }
+  
+  /**
+   * Display notification to the user
+   */
+  private showNotification(message: string, isError: boolean = false) {
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      panelClass: isError ? ['error-snackbar'] : ['success-snackbar']
+    });
+  }
 
   onSubscribe() {
       this.settingsService.selectedExpiryDate.subscribe(date => {
@@ -123,9 +203,11 @@ export class SettingsComponent implements OnInit {
       this.http.post('http://localhost:8000/producer/subscribe', body).subscribe({
         next: (response) => {
           console.log('Subscription successful:', response);
+          this.showNotification('Subscription successful');
         },
         error: (error) => {
           console.error('Subscription error:', error);
+          this.showNotification('Subscription error', true);
         }
       });
     }).unsubscribe();

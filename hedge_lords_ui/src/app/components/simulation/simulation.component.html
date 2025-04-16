@@ -1,0 +1,18 @@
+<div class="simulation-container">
+  <div *ngIf="simulationResults; else noData" class="results-container">
+    <h2>Simulation Results</h2>
+    <div class="simulation-data">
+      <pre>{{ simulationResults | json }}</pre>
+    </div>
+  </div>
+  
+  <ng-template #noData>
+    <div class="no-data-message">
+      <p><em>Please run simulation from settings to get the data</em></p>
+      <button mat-fab extended class="run-simulation-button" (click)="runSimulation()">
+        <mat-icon>trending_up</mat-icon>
+        Run Monte Carlo Analysis
+      </button>
+    </div>
+  </ng-template>
+</div>

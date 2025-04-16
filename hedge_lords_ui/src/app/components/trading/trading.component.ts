@@ -7,6 +7,7 @@ import { PositionAnalysisComponent } from '../position-analysis/position-analysi
 import { HighchartsChartModule } from 'highcharts-angular';
 import { StraddleChartComponent } from '../straddle-chart/straddle-chart.component';
 import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
+import { SimulationComponent } from '../simulation/simulation.component';
 
 @Component({
   selector: 'app-trading',
@@ -15,6 +16,7 @@ import { PayoffWebsocketService } from '../../services/payoff-websocket.service'
     OptionsChainComponent, 
     PositionAnalysisComponent,
     HighchartsChartModule,
+    SimulationComponent,
     StraddleChartComponent
   ],
   templateUrl: './trading.component.html',

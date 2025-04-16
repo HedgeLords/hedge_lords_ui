@@ -1,0 +1,64 @@
+.simulation-container {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.run-simulation-button{
+  background: linear-gradient(90deg, #9c27b0 0%, #ba68c8 100%);
+  transition: all 0.3s ease;
+  color: white;
+  
+  &:hover {
+    background: linear-gradient(90deg, #8e24aa 0%, #ab47bc 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+  }
+
+}
+
+.results-container {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  flex: 1;
+  overflow: auto;
+
+  h2 {
+    margin-top: 0;
+    color: #333;
+    margin-bottom: 16px;
+  }
+
+  .simulation-data {
+    pre {
+      background-color: #fff;
+      padding: 12px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      overflow: auto;
+      max-height: 500px;
+    }
+  }
+}
+
+.no-data-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+
+  p {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+
+  button {
+    margin-top: 10px;
+  }
+}

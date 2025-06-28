@@ -158,23 +158,29 @@ export class SettingsComponent implements OnInit {
    * Run the Monte Carlo simulation
    */
   runSimulation() {
-    this.analysisService
-      .runSimulation(
-        this.selectedCoin,
-        this.selectedExpiryDate?.toISOString().slice(0, 10)!,
-        '1h',
-        1000
-      )
-      .subscribe({
-        next: (response) => {
-          console.log('Simulation completed successfully:', response);
-          this.showNotification('Simulation completed successfully');
-        },
-        error: (error) => {
-          console.error('Error running simulation:', error);
-          this.showNotification('Error running simulation', true);
-        },
-      });
+    // Format date as yyyy-mm-dd in local time, not UTC
+    const coin = this.selectedCoin;
+    let expiryDate = '';
+    if (this.selectedExpiryDate) {
+      const year = this.selectedExpiryDate.getFullYear();
+      const month = String(this.selectedExpiryDate.getMonth() + 1).padStart(
+        2,
+        '0'
+      );
+      const day = String(this.selectedExpiryDate.getDate()).padStart(2, '0');
+      expiryDate = `${year}-${month}-${day}`;
+    }
+
+    this.analysisService.runSimulation(coin, expiryDate, '1h', 1000).subscribe({
+      next: (response) => {
+        console.log('Simulation completed successfully:', response);
+        this.showNotification('Simulation completed successfully');
+      },
+      error: (error) => {
+        console.error('Error running simulation:', error);
+        this.showNotification('Error running simulation', true);
+      },
+    });
   }
 
   /**

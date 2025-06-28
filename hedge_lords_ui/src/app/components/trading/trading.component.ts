@@ -7,26 +7,32 @@ import { PositionAnalysisComponent } from '../position-analysis/position-analysi
 import { HighchartsChartModule } from 'highcharts-angular';
 import { StraddleChartComponent } from '../straddle-chart/straddle-chart.component';
 import { PayoffWebsocketService } from '../../services/payoff-websocket.service';
+import { MatIconModule } from '@angular/material/icon';
+import { AnalysisService } from '../../services/analysis.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-trading',
   standalone: true,
   imports: [
-    OptionsChainComponent, 
+    CommonModule,
+    OptionsChainComponent,
     PositionAnalysisComponent,
     HighchartsChartModule,
-    StraddleChartComponent
+    StraddleChartComponent,
+    MatIconModule,
   ],
   templateUrl: './trading.component.html',
   styleUrl: './trading.component.scss',
-  providers: [
-    SettingsService, 
-    RestClientService  ],
+  providers: [SettingsService, RestClientService],
 })
 export class TradingComponent implements OnDestroy {
   private subscriptions: Subscription = new Subscription();
+  public simulationResult$;
 
-  constructor() {}
+  constructor(private analysisService: AnalysisService) {
+    this.simulationResult$ = this.analysisService.getSimulationResults();
+  }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();

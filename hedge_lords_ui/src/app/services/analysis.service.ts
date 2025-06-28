@@ -26,7 +26,7 @@ export class AnalysisService {
    * Clears the current scenario
    */
   clearScenario(): Observable<any> {
-    return this.http.post(`${this.BASE_URL}/stream/clear_simulations`, {});
+    return this.http.delete(`${this.BASE_URL}/stream/clear_simulations`);
   }
 
   /**
@@ -40,7 +40,7 @@ export class AnalysisService {
     iterations: number
   ): Observable<any> {
     return this.http
-      .post(`${this.BASE_URL}/stream/simulate`, {
+      .post(`${this.BASE_URL}/stream/expected_values`, {
         symbol: symbol,
         expiry_date: expiryDate,
         resolution: resolution,

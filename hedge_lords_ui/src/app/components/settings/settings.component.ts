@@ -54,8 +54,8 @@ export class SettingsComponent implements OnInit {
   selectedLotSize: number = 0.0001;
 
   constructor(
-    private settingsService: SettingsService, 
-    private http: HttpClient, 
+    private settingsService: SettingsService,
+    private http: HttpClient,
     private payoffService: PayoffWebsocketService,
     private analysisService: AnalysisService,
     private snackBar: MatSnackBar,
@@ -96,7 +96,7 @@ export class SettingsComponent implements OnInit {
     this.selectedExpiryDate = newDate;
     this.settingsService.setSelectedExpiryDate(newDate);
     console.log('Date changed to:', newDate);
-    
+
     // Force Angular change detection
     setTimeout(() => {
       console.log('Current date after change:', this.selectedExpiryDate);
@@ -106,36 +106,40 @@ export class SettingsComponent implements OnInit {
   onLotSizeChange() {
     this.settingsService.setSelectedLotSize(this.selectedLotSize);
   }
-  
+
   /**
    * Update lot size on the server when the user clicks the button
    */
   updateLotSize() {
     // Update local settings first
     this.settingsService.setSelectedLotSize(this.selectedLotSize);
-    
+
     // Then send to backend
     this.analysisService.updateLotSize(this.selectedLotSize).subscribe({
       next: (response) => {
         console.log('Lot size updated successfully:', response);
         this.showNotification('Lot size updated successfully');
-        
+
         // Refresh payoff data to reflect the new lot size
         this.payoffService.refreshPayoffData();
       },
       error: (error) => {
         console.error('Error updating lot size:', error);
         this.showNotification('Error updating lot size', true);
-      }
+      },
     });
   }
-  
+
   /**
    * Clear the current scenario after confirmation
    */
   clearScenario() {
     // Use the browser's built-in confirm dialog
-    if (confirm('Are you sure you want to clear the current scenario? This action cannot be undone.')) {
+    if (
+      confirm(
+        'Are you sure you want to clear the current scenario? This action cannot be undone.'
+      )
+    ) {
       // User confirmed the action
       this.analysisService.clearScenario().subscribe({
         next: (response) => {
@@ -145,71 +149,88 @@ export class SettingsComponent implements OnInit {
         error: (error) => {
           console.error('Error clearing scenario:', error);
           this.showNotification('Error clearing scenario', true);
-        }
+        },
       });
     }
   }
-  
+
   /**
    * Run the Monte Carlo simulation
    */
   runSimulation() {
-    this.analysisService.runSimulation().subscribe({
-      next: (response) => {
-        console.log('Simulation completed successfully:', response);
-        this.showNotification('Simulation completed successfully');
-      },
-      error: (error) => {
-        console.error('Error running simulation:', error);
-        this.showNotification('Error running simulation', true);
-      }
-    });
+    this.analysisService
+      .runSimulation(
+        this.selectedCoin,
+        this.selectedExpiryDate?.toISOString().slice(0, 10)!,
+        '1h',
+        1000
+      )
+      .subscribe({
+        next: (response) => {
+          console.log('Simulation completed successfully:', response);
+          this.showNotification('Simulation completed successfully');
+        },
+        error: (error) => {
+          console.error('Error running simulation:', error);
+          this.showNotification('Error running simulation', true);
+        },
+      });
   }
-  
+
   /**
    * Display notification to the user
    */
   private showNotification(message: string, isError: boolean = false) {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
-      panelClass: isError ? ['error-snackbar'] : ['success-snackbar']
+      panelClass: isError ? ['error-snackbar'] : ['success-snackbar'],
     });
   }
 
   onSubscribe() {
-      this.settingsService.selectedExpiryDate.subscribe(date => {
-      this.selectedExpiryDate = date;
-      
-      // Format the date correctly accounting for timezone
-      let formattedDate = '';
-      if (this.selectedExpiryDate) {
-        // Get local date components
-        const year = this.selectedExpiryDate.getFullYear();
-        const month = String(this.selectedExpiryDate.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-        const day = String(this.selectedExpiryDate.getDate()).padStart(2, '0');
-        
-        formattedDate = `${year}-${month}-${day}`;
-      }
-      
-      const body = {
-        symbol: this.selectedCoin,
-        expiry_date: formattedDate
-      };
-      
-      console.log("Current date in component:", this.selectedExpiryDate);
-      console.log("Formatted date for API:", formattedDate);
-      console.log("Request body:", body);
+    this.settingsService.selectedExpiryDate
+      .subscribe((date) => {
+        this.selectedExpiryDate = date;
 
-      this.http.post('http://localhost:8000/producer/subscribe', body).subscribe({
-        next: (response) => {
-          console.log('Subscription successful:', response);
-          this.showNotification('Subscription successful');
-        },
-        error: (error) => {
-          console.error('Subscription error:', error);
-          this.showNotification('Subscription error', true);
+        // Format the date correctly accounting for timezone
+        let formattedDate = '';
+        if (this.selectedExpiryDate) {
+          // Get local date components
+          const year = this.selectedExpiryDate.getFullYear();
+          const month = String(this.selectedExpiryDate.getMonth() + 1).padStart(
+            2,
+            '0'
+          ); // Months are 0-indexed
+          const day = String(this.selectedExpiryDate.getDate()).padStart(
+            2,
+            '0'
+          );
+
+          formattedDate = `${year}-${month}-${day}`;
         }
-      });
-    }).unsubscribe();
+
+        const body = {
+          symbol: this.selectedCoin,
+          expiry_date: formattedDate,
+        };
+
+        console.log('Current date in component:', this.selectedExpiryDate);
+        console.log('Formatted date for API:', formattedDate);
+        console.log('Request body:', body);
+
+        this.http
+          .post('http://localhost:8000/producer/subscribe', body)
+          .subscribe({
+            next: (response) => {
+              console.log('Subscription successful:', response);
+              this.showNotification('Subscription successful');
+            },
+            error: (error) => {
+              console.error('Subscription error:', error);
+              this.showNotification('Subscription error', true);
+            },
+          });
+      })
+      .unsubscribe();
   }
 }

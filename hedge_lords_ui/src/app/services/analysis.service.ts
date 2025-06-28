@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AnalysisService {
   private readonly BASE_URL = 'http://localhost:8001';
@@ -17,25 +17,40 @@ export class AnalysisService {
    * @param lotSize The new lot size value
    */
   updateLotSize(lotSize: number): Observable<any> {
-    return this.http.post(`${this.BASE_URL}/update_lotsize`, { lot_size: lotSize });
+    return this.http.post(`${this.BASE_URL}/update_lotsize`, {
+      lot_size: lotSize,
+    });
   }
 
   /**
    * Clears the current scenario
    */
   clearScenario(): Observable<any> {
-    return this.http.post(`${this.BASE_URL}/clear_scenario`, {});
+    return this.http.post(`${this.BASE_URL}/stream/clear_simulations`, {});
   }
 
   /**
    * Runs the Monte Carlo simulation and stores the result
    */
-  runSimulation(): Observable<any> {
-    return this.http.post(`${this.BASE_URL}/run_simulation`, {}).pipe(
-      tap(result => {
-        this.simulationResult$.next(result);
+
+  runSimulation(
+    symbol: string,
+    expiryDate: string,
+    resolution: string,
+    iterations: number
+  ): Observable<any> {
+    return this.http
+      .post(`${this.BASE_URL}/stream/simulate`, {
+        symbol: symbol,
+        expiry_date: expiryDate,
+        resolution: resolution,
+        iterations: iterations,
       })
-    );
+      .pipe(
+        tap((result) => {
+          this.simulationResult$.next(result);
+        })
+      );
   }
 
   /**

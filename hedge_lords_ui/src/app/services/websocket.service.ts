@@ -69,6 +69,33 @@ export class WebsocketService {
     });
   }
 
+  // public updateLotSize(lotSize: number): void {
+  //   if (this.socket$) {
+  //     const subscribeMessage = {
+  //       type: 'subscribe',
+  //       payload: {
+  //         channels: [
+  //           { name: 'v2/ticker', set_lot_size:  }, // Or specify symbols if needed
+  //         ],
+  //       },
+  //     };
+  //     this.socket$.next(subscribeMessage);
+  //     this.socket$.subscribe({
+  //       next: (msg: any) => {
+  //         if (msg.type === 'lot_size_update') {
+  //           // Assuming the message contains the updated lot size
+  //           console.log('Lot size updated:', msg.lot_size);
+  //         }
+  //       },
+  //       error: (err) => {
+  //         console.error('Error updating lot size:', err);
+  //       },
+  //     });
+  //   } else {
+  //     console.error('WebSocket is not connected.');
+  //   }
+  // }
+
   public unsubscribe(): void {
     const unsubscribeMessage = {
       type: 'unsubscribe',
